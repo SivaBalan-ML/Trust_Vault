@@ -1,0 +1,23 @@
+{
+  "name": "trustvault-contracts",
+  "version": "0.1.0",
+  "description": "TrustVault smart contracts (IdentityRegistry, AssetRegistry, AccessControl, AuditRegistry) for the Sepolia testnet.",
+  "license": "MIT",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "node": "hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.17",
+    "typescript": "^5.7.2",
+    "ts-node": "^10.9.2",
+    "@types/node": "^22.10.5",
+    "dotenv": "^16.4.7"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0"
+  }
+}

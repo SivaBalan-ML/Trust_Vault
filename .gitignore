@@ -1,0 +1,39 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node ---
+node_modules/
+dist/
+browser-build/
+coverage/
+
+# --- Env / secrets ---
+.env
+.env.local
+*.pem
+*.key
+
+# --- Storage (encrypted assets, local DB) ---
+backend/storage/*
+!backend/storage/.gitkeep
+backend/*.sqlite
+backend/*.db
+
+# --- Hardhat ---
+contracts/artifacts/
+contracts/cache/
+contracts/hardhat-deployments/
+contracts/typechain-types/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
