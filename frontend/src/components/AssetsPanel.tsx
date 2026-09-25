@@ -113,8 +113,8 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <Panel
-        title="Encrypted upload"
-        subtitle="AES-256-GCM encrypt → SHA-256 hash → local storage → proof metadata"
+        title="Protect a file"
+        subtitle="We encrypt the file before saving it and keep a check that can detect changes."
         icon={<UploadIcon className="h-5 w-5" />}
       >
         <div className="space-y-3.5">
@@ -154,7 +154,7 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
               <>
                 <span className="text-sm font-medium text-slate-200">Drop a file here or click to browse</span>
                 <span className="text-[11px] text-slate-500">
-                  Encrypted client-side before the SHA-256 hash is stored
+                  Encrypted before it is stored. Only a tamper check is recorded.
                 </span>
               </>
             )}
@@ -162,19 +162,19 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
 
           <BtnPrimary className="w-full" onClick={upload} disabled={!file || busy}>
             {busy && <Spinner />}
-            {busy ? 'Encrypting…' : 'Encrypt + store'}
+            {busy ? 'Protecting file…' : 'Protect this file'}
           </BtnPrimary>
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
         </div>
       </Panel>
 
       <Panel
-        title="Access policy (ABAC)"
-        subtitle="Owner defines role + purpose + minimum trust for a policy"
+        title="Choose who can use it"
+        subtitle="Set the person’s role and why they need the file. Security checks run automatically."
         icon={<FolderLockIcon className="h-5 w-5" />}
       >
         <div className="space-y-3.5">
-          <Field label="Asset" hint="which document the policy covers">
+            <Field label="File" hint="which file this permission covers">
             <Select value={policy.asset_id} onChange={(e) => setPolicy({ ...policy, asset_id: e.target.value })}>
               <option value="">Select asset…</option>
               {owners.map((a) => (
@@ -187,26 +187,29 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
           <div className="grid grid-cols-3 gap-3">
             <Field label="Role">
               <Select value={policy.role} onChange={(e) => setPolicy({ ...policy, role: e.target.value })}>
-                <option value="verifier">verifier</option>
-                <option value="issuer">issuer</option>
-                <option value="holder">holder</option>
+                <option value="verifier">Reviewer checking the file</option>
+                <option value="issuer">Organization that issued it</option>
+                <option value="holder">Employee who owns it</option>
               </Select>
             </Field>
             <Field label="Purpose">
               <Input value={policy.purpose} onChange={(e) => setPolicy({ ...policy, purpose: e.target.value })} placeholder="employment" />
             </Field>
-            <Field label="Min trust">
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={policy.min_trust}
-                onChange={(e) => setPolicy({ ...policy, min_trust: e.target.value })}
-              />
-            </Field>
+            <details className="rounded-lg border border-ink-700/70 px-3 py-2">
+              <summary className="cursor-pointer text-xs font-medium text-slate-500">Advanced security setting</summary>
+              <Field label="Minimum security score" hint="Leave at 50 for the demo">
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={policy.min_trust}
+                  onChange={(e) => setPolicy({ ...policy, min_trust: e.target.value })}
+                />
+              </Field>
+            </details>
           </div>
           <BtnPrimary className="w-full" onClick={addPolicy} disabled={!policy.asset_id}>
-            Add policy
+            Save permission
           </BtnPrimary>
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
         </div>
@@ -214,15 +217,15 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
 
       <div className="lg:col-span-2">
         <Panel
-          title="Assets"
-          subtitle="Click evaluate to run the full access-control pipeline on the content endpoint"
+          title="Your protected files"
+          subtitle="Open a file to check your current permission before downloading it."
           icon={<LockIcon className="h-5 w-5" />}
         >
           {owners.length === 0 ? (
             <EmptyState
               icon={<FileTextIcon className="h-5 w-5" />}
-              title="No assets yet"
-              hint="Upload a file to see it encrypted, hashed and tracked — then define a policy and evaluate controlled access."
+              title="No protected files yet"
+              hint="Choose a sample file or upload one above. We will protect it and show you who can access it."
             />
           ) : (
             <div className="space-y-3">
@@ -238,7 +241,7 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-sm font-semibold text-slate-200">{a.name}</span>
-                        {a.owner_id === user?.id && <Badge tone="slate">mine</Badge>}
+                        {a.owner_id === user?.id && <Badge tone="slate">Added by you</Badge>}
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 font-mono text-[10px] text-slate-600">
                         <span title={a.file_hash}>sha256 {a.file_hash.slice(0, 26)}…</span>
@@ -249,7 +252,7 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
                   </div>
                   <BtnGhost className="shrink-0 !px-3 !py-1.5 text-xs" onClick={() => download(a.id)}>
                     <ArrowDownIcon className="h-3.5 w-3.5" />
-                    Evaluate access
+                    Check my permission
                   </BtnGhost>
                 </div>
               ))}

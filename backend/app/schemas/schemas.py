@@ -16,7 +16,7 @@ class LoginStartRequest(BaseModel):
 
 class RegisterStartRequest(BaseModel):
     email: EmailStr
-    role: str = Field(default="holder", pattern="^(holder|issuer|verifier|admin)$")
+    role: str = Field(default="holder", pattern="^(holder|issuer|verifier)$")
 
 
 class PasskeyCompleteRequest(BaseModel):

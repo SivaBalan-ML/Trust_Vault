@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "sqlite:///./trustvault.db"
+    environment: str = "production"
+    dev_login_enabled: bool = False
 
     # Security
     jwt_secret: str = "change-me-dev-secret"

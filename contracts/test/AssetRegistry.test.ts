@@ -42,4 +42,10 @@ describe("AssetRegistry", () => {
       registry.registerAsset(ASSET, OWNER, ethers.ZeroHash)
     ).to.be.revertedWith("AssetRegistry: empty file hash");
   });
+
+  it("allows only the registry owner to create an asset", async () => {
+    const { registry, stranger } = await loadFixture(deployAssetRegistry);
+    await expect(registry.connect(stranger).registerAsset(ASSET, OWNER, FILEHASH))
+      .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+  });
 });

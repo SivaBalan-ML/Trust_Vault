@@ -28,7 +28,7 @@ contract AssetRegistry is Ownable {
         bytes32 assetId,
         bytes32 ownerDidHash,
         bytes32 fileHash
-    ) external returns (bool) {
+    ) external onlyOwner returns (bool) {
         require(ownerDidHash != bytes32(0), "AssetRegistry: empty owner hash");
         require(fileHash != bytes32(0), "AssetRegistry: empty file hash");
         require(!assets[assetId].exists, "AssetRegistry: asset already registered");

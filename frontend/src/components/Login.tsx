@@ -4,10 +4,10 @@ import { BadgeCheckIcon, ChevronRightIcon, FingerprintIcon, LockIcon, ShieldIcon
 import { BtnPrimary, Field, Input, Notice, Spinner, cn } from './ui'
 
 const DEMO_ACCOUNTS = [
-  { email: 'issuer@trustvault.example', label: 'Issuer', desc: 'An institution that issues credentials', dot: 'bg-sky-400' },
-  { email: 'holder@trustvault.example', label: 'Holder', desc: 'A user with encrypted assets & policies', dot: 'bg-emerald-400' },
-  { email: 'verifier@trustvault.example', label: 'Verifier', desc: 'An employer requesting scoped access', dot: 'bg-violet-400' },
-  { email: 'admin@trustvault.example', label: 'Admin', desc: 'Platform administrator with override', dot: 'bg-rose-400' },
+  { email: 'issuer@trustvault.example', label: 'Organization team', desc: 'Add verified information for employees', dot: 'bg-sky-400' },
+  { email: 'holder@trustvault.example', label: 'Employee', desc: 'Manage your files and permissions', dot: 'bg-emerald-400' },
+  { email: 'verifier@trustvault.example', label: 'Reviewer', desc: 'Request access to shared information', dot: 'bg-violet-400' },
+  { email: 'admin@trustvault.example', label: 'Administrator', desc: 'Manage demo settings and accounts', dot: 'bg-rose-400' },
 ]
 
 const FEATURES = [
@@ -57,11 +57,9 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
 
           <div className="relative space-y-5">
             <p className="text-2xl font-bold leading-snug tracking-tight text-white">
-              Blockchain-anchored,
+              Keep important files private.
               <br />
-              privacy-preserving
-              <br />
-              identity &amp; access control.
+              Decide who can use them.
             </p>
             <div className="space-y-3.5">
               {FEATURES.map((f) => (
@@ -79,27 +77,25 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
           </div>
 
           <p className="relative text-[11px] text-slate-600">
-            Demo build · runs free on Sepolia testnet with WebAuthn / passkey support
+            Student demonstration using fictional accounts and sample data
           </p>
         </div>
 
-        <div className="p-8 sm:p-12">
+          <div className="login-form-panel p-8 sm:p-12">
           <div className="lg:hidden">
             <div className="mb-6 flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 shadow-lg shadow-brand-600/40">
                 <ShieldIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-base font-bold tracking-tight text-white">TrustVault</p>
+                <p className="text-base font-bold tracking-tight text-slate-100">TrustVault</p>
                 <p className="text-[11px] text-slate-500">Verify once. Control access everywhere.</p>
               </div>
             </div>
           </div>
 
-          <h1 className="text-xl font-bold tracking-tight text-white">Sign in to get started</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Pick a role below to enter the security flow, or use your own demo email.
-          </p>
+          <h1 className="text-xl font-bold tracking-tight text-slate-100">Welcome to TrustVault</h1>
+          <p className="mt-1 text-sm text-slate-500">Choose how you want to explore the demo. No password is needed here.</p>
 
           <form
             className="mt-6 space-y-3"
@@ -108,7 +104,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
               signIn(email)
             }}
           >
-            <Field label="Email" hint="dev-login fallback">
+            <Field label="Demo email" hint="optional">
               <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@trustvault.example" />
             </Field>
             <BtnPrimary className="w-full" disabled={busy}>
@@ -119,7 +115,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
 
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-ink-800" />
-            <span className="text-[11px] uppercase tracking-widest text-slate-600">or demo role</span>
+            <span className="text-[11px] uppercase tracking-widest text-slate-600">Choose a demo account</span>
             <div className="h-px flex-1 bg-ink-800" />
           </div>
 
@@ -149,9 +145,7 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
           </div>
 
           <Notice tone="slate" className="mt-6">
-            <span className="font-medium">Why demo roles?</span> The dev-login fallback lets the whole security
-            flow run without a hardware authenticator. The production path uses WebAuthn passkeys ({' '}
-            <code className="font-mono text-[10px]">register/start → complete → login/start → complete</code>).
+            This is a local demo. These sample accounts help you explore different parts of the system.
           </Notice>
 
           {error && (

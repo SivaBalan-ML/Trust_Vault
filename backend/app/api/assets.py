@@ -121,12 +121,9 @@ def get_asset(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    has_grant = (
-        db.query(AccessGrant)
-        .filter(AccessGrant.asset_id == asset_id, AccessGrant.requester_id == current.id)
-        .first()
-        is not None
-    )
+    # Metadata access follows the same active grant rules as content access.
+    # An expired or revoked grant must not keep exposing the asset record.
+    has_grant = find_active_grant(db, asset, current) is not None
     if asset.owner_id != current.id and not has_grant:
         raise HTTPException(status_code=403, detail="Not authorized for this asset")
 

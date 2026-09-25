@@ -247,6 +247,8 @@ def login_dev(body: LoginStartRequest):
     demo script, the automated tests, and the attack-simulation CLI so the
     security flow can be exercised without a physical authenticator.
     """
+    if not settings.dev_login_enabled or settings.environment.lower() not in {"development", "test"}:
+        raise HTTPException(status_code=404, detail="Development login is disabled")
     email = body.email.lower()
     with SessionLocal() as db:
         user = db.query(User).filter(User.email == email).first()

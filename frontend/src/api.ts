@@ -12,13 +12,26 @@ export class ApiError extends Error {
 }
 
 let token: string | null = localStorage.getItem('trustvault_token')
-let currentUser: any = null
+let currentUser: any = (() => {
+  try {
+    const saved = localStorage.getItem('trustvault_user')
+    return saved ? JSON.parse(saved) : null
+  } catch {
+    localStorage.removeItem('trustvault_user')
+    return null
+  }
+})()
 
 export function setAuth(t: string | null, user?: any) {
   token = t
   currentUser = user ?? null
-  if (t) localStorage.setItem('trustvault_token', t)
-  else localStorage.removeItem('trustvault_token')
+  if (t) {
+    localStorage.setItem('trustvault_token', t)
+    if (user) localStorage.setItem('trustvault_user', JSON.stringify(user))
+  } else {
+    localStorage.removeItem('trustvault_token')
+    localStorage.removeItem('trustvault_user')
+  }
 }
 
 export function getToken() {
