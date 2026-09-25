@@ -111,12 +111,22 @@ def build_context(
 
 
 def _find_policy(db: Session, asset: Asset, user: User, purpose: str) -> AccessPolicy | None:
-    return (
+    """Find the policy that matches the user's role and requested purpose.
+
+    An owner may add more than one policy for the same role. Select the policy
+    matching this request rather than whichever row the database returns first.
+    Normalising whitespace and case keeps the demo form forgiving for people.
+    """
+    requested = purpose.strip().casefold()
+    policies = (
         db.query(AccessPolicy)
         .filter(AccessPolicy.asset_id == asset.id, AccessPolicy.requester_role == user.role)
         .all()
-        or [None]
-    )[0]
+    )
+    return next(
+        (policy for policy in policies if policy.purpose.strip().casefold() == requested),
+        policies[0] if policies else None,
+    )
 
 
 def find_active_grant(db: Session, asset: Asset, user: User) -> AccessGrant | None:
