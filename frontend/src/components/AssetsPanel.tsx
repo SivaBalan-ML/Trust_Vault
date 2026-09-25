@@ -28,6 +28,9 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
   const user = getCurrentUser()
   const [assets, setAssets] = useState<Asset[]>([])
   const [file, setFile] = useState<File | null>(null)
+  const [integrityFile, setIntegrityFile] = useState<File | null>(null)
+  const [integrityAssetId, setIntegrityAssetId] = useState('')
+  const [integrityResult, setIntegrityResult] = useState<NoticeState | null>(null)
   const [dragging, setDragging] = useState(false)
   const [policy, setPolicy] = useState<{ asset_id: string; role: string; purpose: string; min_trust: string }>({
     asset_id: '',
@@ -106,6 +109,21 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
           : `Access denied: ${e.message ?? ''}`,
       })
     }
+  }
+
+  async function verifyIntegrity() {
+    const asset = assets.find((item) => item.id === integrityAssetId)
+    if (!asset || !integrityFile) return
+    const bytes = await integrityFile.arrayBuffer()
+    const digest = await crypto.subtle.digest('SHA-256', bytes)
+    const fingerprint = Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
+    const unchanged = fingerprint === asset.file_hash
+    setIntegrityResult({
+      tone: unchanged ? 'green' : 'red',
+      text: unchanged
+        ? 'Fingerprint MATCH — this is exactly the file that was protected.'
+        : 'Fingerprint MISMATCH — this file was changed after the original was protected.',
+    })
   }
 
   const owners = assets
@@ -212,6 +230,28 @@ export default function AssetsPanel({ onPipeline }: { onPipeline: (r: any) => vo
             Save permission
           </BtnPrimary>
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
+        </div>
+      </Panel>
+
+      <Panel
+        title="Check if a file was changed"
+        subtitle="Compare a local file with the fingerprint recorded when it was protected."
+        icon={<FileTextIcon className="h-5 w-5" />}
+      >
+        <div className="space-y-3.5">
+          <Field label="Protected file">
+            <Select value={integrityAssetId} onChange={(e) => setIntegrityAssetId(e.target.value)}>
+              <option value="">Select protected file…</option>
+              {owners.map((asset) => <option key={asset.id} value={asset.id}>{asset.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="File to check" hint="Choose the original file, or a changed copy">
+            <Input type="file" onChange={(e) => setIntegrityFile(e.target.files?.[0] ?? null)} />
+          </Field>
+          <BtnPrimary className="w-full" onClick={verifyIntegrity} disabled={!integrityAssetId || !integrityFile}>
+            Compare fingerprints
+          </BtnPrimary>
+          {integrityResult && <Notice tone={integrityResult.tone}>{integrityResult.text}</Notice>}
         </div>
       </Panel>
 
