@@ -80,17 +80,29 @@ def list_assets(
     current: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Assets owned by the current user, plus any asset the user holds a grant for."""
+    """Show owned, granted, and policy-requestable assets.
+
+    A reviewer must be able to discover a file with a policy matching their
+    role before requesting access. Listing this limited metadata does not
+    expose the encrypted file: the content endpoint still requires an active
+    owner-approved grant and runs the full policy check.
+    """
     owned = db.query(Asset).filter(Asset.owner_id == current.id).all()
     granted_ids = (
         db.query(AccessGrant.asset_id).filter(AccessGrant.requester_id == current.id).distinct()
     )
-    granted = (
+    policy_asset_ids = (
+        db.query(AccessPolicy.asset_id)
+        .filter(AccessPolicy.requester_role == current.role)
+        .distinct()
+    )
+    visible_ids = granted_ids.union(policy_asset_ids)
+    shared = (
         db.query(Asset)
-        .filter(Asset.id.in_(granted_ids), Asset.owner_id != current.id)
+        .filter(Asset.id.in_(visible_ids), Asset.owner_id != current.id)
         .all()
     )
-    rows = owned + granted
+    rows = owned + shared
     return [
         AssetUploadResponse(
             id=a.id,
