@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getCurrentUser, api, type TrustState, type SecurityEvent, type Asset } from '../api'
+import { getCurrentUser, api, type TrustState, type SecurityEvent, type Asset, type AccessRequest } from '../api'
 
 const CHECKS = [
   { key: 'identity', label: 'Identity' },
@@ -20,18 +20,21 @@ export default function TrustPanel({ onNavigate }: { onNavigate: (target: 'timel
   const [state, setState] = useState<TrustState | null>(null)
   const [events, setEvents] = useState<SecurityEvent[]>([])
   const [assets, setAssets] = useState<Asset[]>([])
+  const [requests, setRequests] = useState<AccessRequest[]>([])
   const [error, setError] = useState(false)
+  const [downloadError, setDownloadError] = useState('')
   useEffect(() => {
     if (!userId) return
     let mounted = true
     async function refresh() {
       const results = await Promise.allSettled([
-        api.get<TrustState>(`/trust/${userId}`), api.get<SecurityEvent[]>('/security/events'), api.get<Asset[]>('/assets'),
+        api.get<TrustState>(`/trust/${userId}`), api.get<SecurityEvent[]>('/security/events'), api.get<Asset[]>('/assets'), api.get<AccessRequest[]>('/access'),
       ])
       if (!mounted) return
       if (results[0].status === 'fulfilled') { setState(results[0].value); setError(false) } else setError(true)
       if (results[1].status === 'fulfilled') setEvents(results[1].value)
       if (results[2].status === 'fulfilled') setAssets(results[2].value)
+      if (results[3].status === 'fulfilled') setRequests(results[3].value)
     }
     refresh()
     const timer = window.setInterval(refresh, 10000)
@@ -42,6 +45,22 @@ export default function TrustPanel({ onNavigate }: { onNavigate: (target: 'timel
   const scoreColor = score >= 70 ? '#84c430' : score >= 40 ? '#eda94b' : '#e26c62'
   const checkValues = CHECKS.map((check) => ({ ...check, value: Math.max(0, Math.min(100, state?.components[check.key] ?? 0)) }))
   const recentEvents = [...events].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 4)
+  const approvedAssetIds = new Set(requests.filter((request) => request.status === 'approved').map((request) => request.asset_id))
+  const approvedAssets = assets.filter((asset) => approvedAssetIds.has(asset.id))
+  async function downloadApprovedAsset(asset: Asset) {
+    try {
+      setDownloadError('')
+      const blob = await api.download(`/assets/${asset.id}/content`)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = asset.name
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setDownloadError('We could not open this file. Check that your approved access window is still active.')
+    }
+  }
   return <div className="wallet-overview">
     <section className="wallet-balance-card">
       <div className="wallet-card-top"><span className="wallet-overline">YOUR ACCESS</span><span className="wallet-card-index">01 / OVERVIEW</span></div>
@@ -62,6 +81,7 @@ export default function TrustPanel({ onNavigate }: { onNavigate: (target: 'timel
         <button onClick={() => onNavigate('help')}><span className="action-shape action-help">?</span><strong>Need help?</strong><small>See the simple guide</small></button>
       </div>
     </section>
+    {user?.role === 'verifier' && <section className="wallet-insight-card wallet-approved-card"><div className="wallet-section-heading"><div><span className="wallet-overline">APPROVED FOR YOU</span><h3>Files you can open</h3></div><span className="wallet-small-tag">{approvedAssets.length} READY</span></div>{approvedAssets.length ? <div className="wallet-approved-list">{approvedAssets.map((asset) => <div className="wallet-event" key={asset.id}><span className="wallet-event-icon">✓</span><div><strong>{asset.name}</strong><span>Access approved by the owner</span></div><button className="wallet-dark-button" onClick={() => downloadApprovedAsset(asset)}>Open file ↗</button></div>)}</div> : <div className="wallet-empty-activity"><span>⌛</span><strong>Waiting for approval</strong><p>When the owner approves your request, the file will appear here.</p></div>}{downloadError && <p className="wallet-insight-foot">{downloadError}</p>}</section>}
     <section className="wallet-insight-card wallet-score-card"><div className="wallet-section-heading"><div><span className="wallet-overline">01 / STATUS</span><h3>Safety check</h3></div><span className="wallet-small-tag">LIVE</span></div><div className="wallet-donut" style={{ background: `conic-gradient(${scoreColor} ${score}%, #edf0e9 0)` }}><div><strong>{state ? score : '—'}</strong><span>out of 100</span></div></div><p className="wallet-insight-foot">{state ? 'Based on your identity, device and recent activity.' : 'Your account check will appear here shortly.'}</p></section>
     <section className="wallet-insight-card wallet-checks-card"><div className="wallet-section-heading"><div><span className="wallet-overline">02 / BREAKDOWN</span><h3>What we checked</h3></div><span className="wallet-small-tag">{CHECKS.length} CHECKS</span></div><div className="wallet-check-list">{checkValues.map((item) => <div className="wallet-check-row" key={item.key}><div className="wallet-check-text"><span>{item.label}</span><strong>{state ? `${Math.round(item.value)}%` : '—'}</strong></div><div className="wallet-bar"><span style={{ width: `${item.value}%`, backgroundColor: item.value >= 70 ? '#91c94b' : item.value >= 40 ? '#eda94b' : '#e26c62' }} /></div><p>{!state ? 'Waiting for your account check' : item.value >= 70 ? 'Looking good' : item.value >= 40 ? 'Needs review' : 'Action may be needed'}</p></div>)}</div></section>
     <section className="wallet-insight-card wallet-activity-card"><div className="wallet-section-heading"><div><span className="wallet-overline">03 / HISTORY</span><h3>Recent activity</h3></div><button className="wallet-view-all" onClick={() => onNavigate('timeline')}>View all ↗</button></div>{recentEvents.length ? <div className="wallet-event-list">{recentEvents.map((event) => <div className="wallet-event" key={event.id}><span className={`wallet-event-icon ${event.decision === 'BLOCK' ? 'is-blocked' : event.decision === 'STEP_UP' ? 'is-review' : ''}`}>{event.decision === 'BLOCK' ? '×' : event.decision === 'STEP_UP' ? '!' : '✓'}</span><div><strong>{event.event_type.replaceAll('_', ' ').toLowerCase()}</strong><span>{new Date(event.created_at).toLocaleString()}</span></div><em>{event.decision === 'ALLOW' ? 'Allowed' : event.decision === 'BLOCK' ? 'Paused' : event.decision === 'STEP_UP' ? 'Review' : 'Recorded'}</em></div>)}</div> : <div className="wallet-empty-activity"><span>↗</span><strong>All quiet here</strong><p>When something happens in your account, it will show up here.</p></div>}</section>
