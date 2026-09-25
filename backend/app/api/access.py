@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -75,11 +76,16 @@ def list_requests(
     current: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Incoming requests for the current user's assets (owner view)."""
+    """Requests for the current user's assets or made by the current user."""
     user_asset_ids = [a.id for a in db.query(Asset).filter(Asset.owner_id == current.id).all()]
     rows = (
         db.query(AccessRequest)
-        .filter(AccessRequest.asset_id.in_(user_asset_ids))
+        .filter(
+            or_(
+                AccessRequest.asset_id.in_(user_asset_ids),
+                AccessRequest.requester_id == current.id,
+            )
+        )
         .order_by(AccessRequest.created_at.desc())
         .all()
     )
